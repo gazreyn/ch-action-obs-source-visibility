@@ -25,12 +25,13 @@ module.exports = class extends window.casthub.card.action {
         this.ws = await window.casthub.ws(id);
 
         await this.refresh();
-
         await super.mounted();
     }
 
     async refresh() {
+
         const scenes = await this.getScenes();
+        
         scenes.forEach(scene => {
             const { sources } = scene;
             sources.forEach(source => {
@@ -56,7 +57,7 @@ module.exports = class extends window.casthub.card.action {
         const itemCount = items.length;
 
         for(let i = 0; i < itemCount; i++) {
-            options[items[i]] = { text: `${this.sceneItemMap[items[i]].sceneName} - ${this.sceneItemMap[items[i]].sourceName} `, icon: 'person'};
+            options[items[i]] = { text: `${this.sceneItemMap[items[i]].sceneName} - ${this.sceneItemMap[items[i]].sourceName} `, icon: 'widgets'};
         }
 
         return {
@@ -75,9 +76,9 @@ module.exports = class extends window.casthub.card.action {
                 label: 'State',
                 help: 'Hide, show or toggle the source visibilty',
                 options: {
-                    toggle: { text: 'Toggle', icon: 'speaker' },
-                    show: { text: 'Show', icon: 'speaker' },
-                    hide: { text: 'Hide', icon: 'speaker' },
+                    toggle: { text: 'Toggle', icon: 'code' },
+                    show: { text: 'Show', icon: 'remove_red_eye' },
+                    hide: { text: 'Hide', icon: 'stop_screen_share' },
                 }                
             },
         };
@@ -89,19 +90,24 @@ module.exports = class extends window.casthub.card.action {
      * @param {Object} input The output, if any, from the Trigger.
      */
     async run(input) {
-        if(this.props.sceneItem === null) return false; // No source has been selected, no need to continue
-        // TODO: Check if the item set in the properties is found in the scene map
+
+        if(this.props.sceneItem === null) return false;
         if(!this.sceneItemMap.hasOwnProperty(this.props.sceneItem)) return;
+
         const { sceneName, sourceName } = this.sceneItemMap[this.props.sceneItem];
+
         await this.setSourceVisibility(sceneName, sourceName, this.props.visibility);
     }
 
     async getScenes() {
+
         const { scenes } = await this.ws.send('GetSceneList');
+
         return scenes;
     }
 
     async setSourceVisibility(scene, source, visibility) {
+        
         const sourceSettings = await this.ws.send('GetSceneItemProperties', { 
             'scene-name': scene,
             'item': source 
