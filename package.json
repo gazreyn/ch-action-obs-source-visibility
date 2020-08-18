@@ -1,0 +1,6 @@
+{
+    "name": "action-obs-source-visibility",
+    "version": "1.0.0",
+    "main": "index.js",
+    "casthub": {}
+}
