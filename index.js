@@ -77,8 +77,8 @@ module.exports = class extends window.casthub.card.action {
                 help: 'Hide, show or toggle the source visibilty',
                 options: {
                     toggle: { text: 'Toggle', icon: 'code' },
-                    show: { text: 'Show', icon: 'remove_red_eye' },
-                    hide: { text: 'Hide', icon: 'stop_screen_share' },
+                    show: { text: 'Show', icon: 'visibility_on' },
+                    hide: { text: 'Hide', icon: 'visibility_off' },
                 }                
             },
         };
