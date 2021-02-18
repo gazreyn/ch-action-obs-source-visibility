@@ -1,4 +1,5 @@
-import { CardIO, PropType } from '@casthub/types';
+import { CardIO, PropType, PropList, PropItem } from '@casthub/types';
+import { Scene } from 'obs-websocket-js';
 
 export default class extends window.casthub.card.action {
 
@@ -30,14 +31,14 @@ export default class extends window.casthub.card.action {
         await super.mounted();
     }
 
-    async refresh() {
+    async refresh(): Promise<void> {
 
         const scenes = await this.getScenes();
         
         scenes.forEach(scene => {
             const { sources } = scene;
             sources.forEach(source => {
-                const generatedName = `${encodeURI(scene.name)}|${encodeURI(source.name)}`;
+                const generatedName: string = `${encodeURI(scene.name)}|${encodeURI(source.name)}`;
                 this.sceneItemMap[generatedName] = {
                     sceneName: scene.name,
                     sourceName: source.name
@@ -51,7 +52,7 @@ export default class extends window.casthub.card.action {
      *
      * @return {Promise}
      */
-    async prepareProps() {   
+    async prepareProps(): Promise<PropList> {
 
         let options = {};
 
@@ -62,27 +63,31 @@ export default class extends window.casthub.card.action {
             options[items[i]] = { text: `${this.sceneItemMap[items[i]].sceneName} - ${this.sceneItemMap[items[i]].sourceName} `, icon: 'widgets'};
         }
 
+        const sceneItem : PropItem = {
+            type: PropType.Select,
+            required: true,
+            default: null,
+            label: 'Source',
+            help: 'Select a source to toggle',
+            options
+        };
+
+        const visibility : PropItem = {
+            type: PropType.Select,
+            required: true,
+            default: 'toggle',
+            label: 'State',
+            help: 'Hide, show or toggle the source visibilty',
+            options: {
+                toggle: { text: 'Toggle', icon: 'code' },
+                show: { text: 'Show', icon: 'visibility_on' },
+                hide: { text: 'Hide', icon: 'visibility_off' },
+            }  
+        };
+
         return {
-            sceneItem: {
-                type: PropType.Select,
-                required: true,
-                default: null,
-                label: 'Source',
-                help: 'Select a source to toggle',
-                options
-            },
-            visibility: {
-                type: 'select',
-                required: true,
-                default: 'toggle',
-                label: 'State',
-                help: 'Hide, show or toggle the source visibilty',
-                options: {
-                    toggle: { text: 'Toggle', icon: 'code' },
-                    show: { text: 'Show', icon: 'visibility_on' },
-                    hide: { text: 'Hide', icon: 'visibility_off' },
-                }                
-            },
+            sceneItem,
+            visibility,
         };
     }
 
@@ -101,14 +106,14 @@ export default class extends window.casthub.card.action {
         await this.setSourceVisibility(sceneName, sourceName, this.props.visibility);
     }
 
-    async getScenes() {
+    async getScenes(): Promise<Scene[]> {
 
         const { scenes } = await this.ws.send('GetSceneList');
 
         return scenes;
     }
 
-    async setSourceVisibility(scene, source, visibility) {
+    async setSourceVisibility(scene, source, visibility): Promise<void> {
         
         const sourceSettings = await this.ws.send('GetSceneItemProperties', { 
             'scene-name': scene,
