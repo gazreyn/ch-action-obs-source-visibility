@@ -1,4 +1,4 @@
-import { CardIO, PropType, PropList, PropItem } from '@casthub/types';
+import { CardIO, PropType, PropList, PropItem, PropOptions } from '@casthub/types';
 import { Scene } from 'obs-websocket-js';
 
 export default class extends window.casthub.card.action {
@@ -54,10 +54,10 @@ export default class extends window.casthub.card.action {
      */
     async prepareProps(): Promise<PropList> {
 
-        let options = {};
+        let options: PropOptions = {};
 
-        const items = Object.keys(this.sceneItemMap);
-        const itemCount = items.length;
+        const items: string[] = Object.keys(this.sceneItemMap);
+        const itemCount: number = items.length;
 
         for(let i = 0; i < itemCount; i++) {
             options[items[i]] = { text: `${this.sceneItemMap[items[i]].sceneName} - ${this.sceneItemMap[items[i]].sourceName} `, icon: 'widgets'};
