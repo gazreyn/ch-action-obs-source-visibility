@@ -1,5 +1,7 @@
 import { CardIO, PropType, PropList, PropItem, PropOptions } from '@casthub/types';
+//
 import { Scene } from 'obs-websocket-js';
+
 
 export default class extends window.casthub.card.action {
 
@@ -27,11 +29,13 @@ export default class extends window.casthub.card.action {
         const { id } = this.identity;
         this.ws = await window.casthub.ws(id);
 
-        await this.refresh();
+        this.sceneItemMap = await this.generateSceneItemMap();
         await super.mounted();
     }
 
-    async refresh(): Promise<void> {
+    async generateSceneItemMap(): Promise<any> {
+
+        const itemMap = {};
 
         const scenes = await this.getScenes();
         
@@ -39,12 +43,14 @@ export default class extends window.casthub.card.action {
             const { sources } = scene;
             sources.forEach(source => {
                 const generatedName: string = `${encodeURI(scene.name)}|${encodeURI(source.name)}`;
-                this.sceneItemMap[generatedName] = {
+                itemMap[generatedName] = {
                     sceneName: scene.name,
                     sourceName: source.name
                 }
             });
         });
+
+        return itemMap;
     }
 
     /**
