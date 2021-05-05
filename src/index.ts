@@ -10,51 +10,23 @@ export default class extends window.casthub.card.action {
     constructor() {
         super();
 
-        // this.sceneItemMap = {};
-
-        /**
-         * The OBS WebSocket Instance for the action.
-         *
-         * @type {WS|null}
-         */
         this.ws = null;
-
     }
 
-    /**
-     * Called once when the Action is booted on App
-     * launch or when installed for the first time.
-     *
-     * @return {Promise}
-     */
     public async mounted(): Promise<void> {
 
         const { id } = this.identity;
         this.ws = await window.casthub.ws(id);
 
-        // this.sceneItemMap = await this.generateSceneItemMap();
         await super.mounted();
     }
 
-    // async generateSceneItemMap(): Promise<any> {
+    public async run(input: CardIO): Promise<void> {
 
-    //     const itemMap = {};
+        if(this.props.source === null || this.props.source === undefined) return; // Do nothing
 
-    //     const scenes = await this.getScenes();
-        
-    //     scenes.forEach(scene => {
-    //         const { sources } = scene;
-    //         sources.forEach(source => {
-    //             const generatedName: string = `${encodeURI(scene.name)}|${encodeURI(source.name)}`;
-    //             itemMap[generatedName] = {
-    //                 sceneName: scene.name,
-    //                 sourceName: source.name
-    //             }
-    //         });
-    //     });
-
-    //     return itemMap;
-    // }
+        await this.setSourceVisibility(this.props.scene, this.props.source, this.props.visibility);
+    }
 
     /**
      * Asynchronously builds all of the properties for this Module.
@@ -63,78 +35,73 @@ export default class extends window.casthub.card.action {
      */
     async prepareProps(stage): Promise<PropList> {
 
-        console.log(stage);
-
         const scenes = await this.fetchScenes();
-        
-        const sceneOptions = this.generateScenePropOptions(scenes)
-        
+        const sceneOptions = this.generateScenePropOptions(scenes);
 
-        const scene : PropItem = {
-            type: PropType.Select,
-            required: true,
-            default: null,
-            label: 'Scene',
-            /// @ts-ignore
-            watch: true,
-            help: 'Select the scene where your source is.',
-            options: sceneOptions
+        /**
+         * Dynamic Props
+         */
+        const dynamicProps: PropList = {};
+
+        if(stage.scene !== undefined && stage.scene !== null) {
+            // Get list of sources
+            const sources = await this.fetchSourcesFromScene(stage.scene);
+            const sourceOptions = this.generateSourcePropOptions(sources);
+
+            dynamicProps['source'] = {
+                type: PropType.Select,
+                default: '',
+                label: 'Source',
+                required: true,
+                /// @ts-ignore
+                watch: true,
+                help: 'Choose the channel where you would like to send the message',
+                options: sourceOptions
+            };
         }
-
+        
         return {
-            scene
+            visibility: {
+                type: PropType.Select,
+                required: true,
+                default: 'toggle',
+                label: 'State',
+                help: 'Hide, show or toggle the source visibilty',
+                options: {
+                    toggle: { text: 'Toggle', icon: 'code' },
+                    show: { text: 'Show', icon: 'visibility_on' },
+                    hide: { text: 'Hide', icon: 'visibility_off' },
+                }  
+            },
+            scene: {
+                type: PropType.Select,
+                required: true,
+                default: null,
+                label: 'Scene',
+                /// @ts-ignore
+                watch: true,
+                help: 'Select the scene where your source is.',
+                options: sceneOptions
+            },
+            ...dynamicProps
         }
-
-        // let options: PropOptions = {};
-
-        // const items: string[] = Object.keys(this.sceneItemMap);
-        // const itemCount: number = items.length;
-
-        // for(let i = 0; i < itemCount; i++) {
-        //     options[items[i]] = { text: `${this.sceneItemMap[items[i]].sceneName} - ${this.sceneItemMap[items[i]].sourceName} `, icon: 'widgets'};
-        // }
-
-        // const sceneItem : PropItem = {
-        //     type: PropType.Select,
-        //     required: true,
-        //     default: null,
-        //     label: 'Source',
-        //     help: 'Select a source to toggle',
-        //     options
-        // };
-
-        // const visibility : PropItem = {
-        //     type: PropType.Select,
-        //     required: true,
-        //     default: 'toggle',
-        //     label: 'State',
-        //     help: 'Hide, show or toggle the source visibilty',
-        //     options: {
-        //         toggle: { text: 'Toggle', icon: 'code' },
-        //         show: { text: 'Show', icon: 'visibility_on' },
-        //         hide: { text: 'Hide', icon: 'visibility_off' },
-        //     }  
-        // };
-
-        // return {
-        //     sceneItem,
-        //     visibility,
-        // };
     }
 
-    /**
-     * Called when a Trigger has executed and all Conditions have passed.
-     *
-     * @param {Object} input The output, if any, from the Trigger.
-     */
-    public async run(input: CardIO): Promise<void> {
+    async fetchScenes(): Promise<Scene[]> {
 
-        // if(this.props.sceneItem === null) return; // Do nothing
-        // if(!this.sceneItemMap.hasOwnProperty(this.props.sceneItem)) return;
+        /// @ts-ignore
+        const { scenes } = await this.ws.send('GetSceneList');
 
-        // const { sceneName, sourceName } = this.sceneItemMap[`${this.props.sceneItem}`];
+        return scenes;
+    }
 
-        // await this.setSourceVisibility(sceneName, sourceName, this.props.visibility);
+    async fetchSourcesFromScene(sceneName: string): Promise<any> {
+        const scenes = await this.fetchScenes();
+        const targetScene = scenes.filter(scene => {
+            return scene.name === sceneName;
+        });
+
+        return targetScene[0].sources;
     }
 
     generateScenePropOptions(scenes: Scene[]): PropOptions {
@@ -149,14 +116,21 @@ export default class extends window.casthub.card.action {
         return options;
     }
 
-    async fetchScenes(): Promise<Scene[]> {
+    generateSourcePropOptions(sources): PropOptions {
+        let options: PropOptions = {};
 
-        const { scenes } = await this.ws.send('GetSceneList');
+        sources.forEach(source => {
+            options[source.name] = {
+                text: source.name
+            }
+        })
 
-        return scenes;
+        return options;
     }
 
     async setSourceVisibility(scene, source, visibility): Promise<void> {
+
+        console.log(scene, source);
         
         // TODO: We can maybe remove this check and only do it IF case is toggle
         const sourceSettings = await this.ws.send('GetSceneItemProperties', { 
