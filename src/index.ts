@@ -50,8 +50,6 @@ export default class extends window.casthub.card.action {
                 default: '',
                 label: 'Source',
                 required: true,
-                /// @ts-ignore
-                watch: true,
                 help: 'Choose the channel where you would like to send the message',
                 options: sourceOptions
             };
@@ -62,6 +60,17 @@ export default class extends window.casthub.card.action {
         const sceneOptions = this.generateScenePropOptions(scenes);
         
         return {
+            scene: {
+                type: PropType.Select,
+                required: true,
+                default: null,
+                label: 'Scene',
+                /// @ts-ignore
+                watch: true,
+                help: 'Select the scene where your source is.',
+                options: sceneOptions
+            },
+            ...dynamicProps,
             visibility: {
                 type: PropType.Select,
                 required: true,
@@ -74,17 +83,6 @@ export default class extends window.casthub.card.action {
                     hide: { text: 'Hide', icon: 'visibility_off' },
                 }  
             },
-            scene: {
-                type: PropType.Select,
-                required: true,
-                default: null,
-                label: 'Scene',
-                /// @ts-ignore
-                watch: true,
-                help: 'Select the scene where your source is.',
-                options: sceneOptions
-            },
-            ...dynamicProps
         }
     }
 
