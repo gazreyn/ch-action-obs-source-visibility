@@ -23,7 +23,7 @@ export default class extends window.casthub.card.action {
 
     public async run(input: CardIO): Promise<void> {
 
-        if(this.props.source === null || this.props.source === undefined) return; // Do nothing
+        if(!this.props.scene || !this.props.source) return; // Do nothing
 
         await this.setSourceVisibility(this.props.scene, this.props.source, this.props.visibility);
     }
@@ -34,9 +34,6 @@ export default class extends window.casthub.card.action {
      * @return {Promise}
      */
     async prepareProps(stage): Promise<PropList> {
-
-        const scenes = await this.fetchScenes();
-        const sceneOptions = this.generateScenePropOptions(scenes);
 
         /**
          * Dynamic Props
@@ -59,6 +56,10 @@ export default class extends window.casthub.card.action {
                 options: sourceOptions
             };
         }
+
+        
+        const scenes = await this.fetchScenes();
+        const sceneOptions = this.generateScenePropOptions(scenes);
         
         return {
             visibility: {
